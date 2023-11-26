@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0.35
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: bookdelivery-db-secret
+                key: DB_PASSWORD_VALUE
+          - name: MYSQL_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                name: bookdelivery-db-config-map
+                key: DB_SCHEMA_VALUE
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: bookdelivery-db-secret
+                key: DB_USER_NAME_VALUE
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: bookdelivery-db-secret
+                key: DB_PASSWORD_VALUE
+          - name: MYSQL_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: bookdelivery-db-config-map
+                key: DB_HOST_SERVICE_NAME_VALUE
+          - name: MYSQL_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: bookdelivery-db-config-map
+                key: DB_PORT_VALUE
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: bookdelivery-db-pvc
